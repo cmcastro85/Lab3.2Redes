@@ -113,17 +113,27 @@ public class MulticastPublisher {
 			int size = data.length;
 			multicast("" + size);
 			int i = 0;
+			byte[] mac;
+			byte[] packet;
 			LOGGER.info("Comenzando transmición...");
 			while (i < size) {
 				byte[] buf;
 
 				if (size - i >= length) {
 					buf = Arrays.copyOfRange(data, i, i + length);
-					multicast(buf);
+					mac = ms.digest(buf);
+					packet = new byte[buf.length+mac.length];
+					System.arraycopy(buf, 0, packet, 0, buf.length);
+					System.arraycopy(mac, 0, packet, buf.length, mac.length);
+					multicast(packet);
 					i += length;
 				} else {
 					buf = Arrays.copyOfRange(data, i, i + size - i);
-					multicast(buf);
+					mac = ms.digest(buf);
+					packet = new byte[buf.length+mac.length];
+					System.arraycopy(buf, 0, packet, 0, buf.length);
+					System.arraycopy(mac, 0, packet, buf.length, mac.length);
+					multicast(packet);
 					i += size - i;
 				}
 			}

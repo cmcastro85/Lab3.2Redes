@@ -10,6 +10,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +27,8 @@ public class Cliente {
 
 	protected MulticastSocket socket = null;
 	protected DatagramSocket envio = null;
-	protected byte[] buf = new byte[256];
+	protected byte[] buf = new byte[512];
+	protected int bufSize = 256;
 
 	public void run() {
 		try {
@@ -60,17 +62,51 @@ public class Cliente {
 			socket.receive(dl);
 			int lenght = Integer.parseInt(new String(dl.getData(),0,dl.getLength()));
 			byte[] imgbyte = new byte[lenght];
+			byte[] mac;
+			byte[] temp;
+			byte[] ck;
 			int i = 0;
+			MessageDigest ms = MessageDigest.getInstance("MD5");
 			while( i<lenght) {
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
 				
-				if(lenght-i>=256) {
-					System.arraycopy(packet.getData(), 0, imgbyte, i, packet.getLength());
-					i+=256;
+				if(lenght-i>=bufSize) {
+					mac = Arrays.copyOfRange(packet.getData(), bufSize, packet.getLength());
+					temp = Arrays.copyOfRange(packet.getData(), 0, bufSize);
+					ck = ms.digest(temp);
+					
+					String ckS = DatatypeConverter.printHexBinary(ck).toUpperCase();
+					String macS = DatatypeConverter.printHexBinary(mac).toUpperCase();
+					
+					if(ckS.equals(macS)) {
+						System.arraycopy(temp, 0, imgbyte, i, temp.length);
+					}
+					else {
+						System.out.println(packet.getLength());
+						System.arraycopy(temp, 0, imgbyte, i, temp.length);
+						System.out.println("Llego: " + macS);
+						System.out.println("Calculado: "+ckS);
+						
+					}
+					i+=bufSize;
 				}
 				else {
-					System.arraycopy(packet.getData(), 0, imgbyte, i, packet.getLength());
+					mac = Arrays.copyOfRange(packet.getData(), lenght-i, packet.getLength());
+					temp = Arrays.copyOfRange(packet.getData(), 0, lenght-i);
+					ck = ms.digest(temp);
+					
+					String ckS = DatatypeConverter.printHexBinary(ck).toUpperCase();
+					String macS = DatatypeConverter.printHexBinary(mac).toUpperCase();
+					
+					if(ckS.equals(macS)) {
+						System.arraycopy(temp, 0, imgbyte, i, temp.length);
+					}
+					else {
+						System.arraycopy(temp, 0, imgbyte, i, temp.length);
+						System.out.println("Llego: " + macS);
+						System.out.println("Calculado: "+ckS);
+					}
 					i += lenght -i;
 				}
 			}
@@ -82,7 +118,7 @@ public class Cliente {
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			socket.receive(packet);
 			String check = new String(packet.getData(),0,packet.getLength());
-			MessageDigest ms = MessageDigest.getInstance("MD5");
+			
 			
 			byte [] hash = ms.digest(imgbyte);
 			
