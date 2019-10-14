@@ -1,9 +1,9 @@
 package servidor;
 
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
@@ -16,9 +16,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.imageio.ImageIO;
-import javax.xml.bind.DatatypeConverter;
 
 public class MulticastPublisher {
 	
@@ -33,6 +30,7 @@ public class MulticastPublisher {
 	 * Socket de la conexion
 	 */
 	private DatagramSocket socket;
+	
 
 	/**
 	 * Ip del grupo
@@ -52,7 +50,7 @@ public class MulticastPublisher {
 		try {
 			socket = new DatagramSocket(5555);
 			group = InetAddress.getByName("230.0.0.0");
-			length = 256;
+			length = 2048;
 			buff = new byte[length];
 		} catch (SocketException e) {
 			LOGGER.log(Level.SEVERE, "El Socket falló.", e);
@@ -92,21 +90,28 @@ public class MulticastPublisher {
 	 * Metodo para cerrar la conexión.
 	 */
 	private void close() {
+		LOGGER.info("Acabando sesion.");
 		socket.close();
 	}
 
 	public void sendFile(File file) {
 
-		try {
+		try (
+				FileInputStream fis = new FileInputStream(file);
+			){
 			LOGGER.info("Cargando Archivo...");
-			BufferedImage bufferimage = ImageIO.read(file);
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			ImageIO.write(bufferimage, "jpg", output);
+			
+			byte[] temp = new byte[4096];
+			int n;
+			while (-1 != (n = fis.read(temp))) {
+				output.write(temp,0,n);
+			}
+			
 			byte[] data = output.toByteArray();
 
 			LOGGER.info("Creando hash...");
 			MessageDigest ms = MessageDigest.getInstance("MD5");
-			byte[] hash = ms.digest(data);
 
 			// *------------------ ENVIANDO ARCHIVO -----------------
 
@@ -139,13 +144,6 @@ public class MulticastPublisher {
 			}
 			LOGGER.info("Archivo enviado!");
 
-			LOGGER.info(" Enviando hash...");
-			String hasho = DatatypeConverter.printHexBinary(hash).toUpperCase();
-			multicast(hasho);
-
-			System.out.println(hasho);
-
-			LOGGER.info("Acabando sesion.");
 			close();
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, "Se puteo todo papa", e);
@@ -153,6 +151,7 @@ public class MulticastPublisher {
 		} catch (NoSuchAlgorithmException e) {
 			LOGGER.log(Level.SEVERE, "Invalid hash algorithm", e);
 		}
+		
 	}
 	
 	public void esperar(int cl) {
@@ -160,13 +159,12 @@ public class MulticastPublisher {
 		
 		int i = 0;
 		while(i<cl) {
-			System.out.println("...");
+			LOGGER.info("Esperando...");
 			try {
 				socket.receive(dt);
 				String recibido = new String(dt.getData(),0,dt.getLength());
 				if(recibido.equals(READY)) {
 					i++;
-					System.out.println("Esperando a "+ i + " clientes" );
 				}
 			} catch (IOException e) {
 				LOGGER.log(Level.SEVERE,"Error al recibir el ready",e);
