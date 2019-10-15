@@ -133,6 +133,7 @@ public class MulticastPublisher {
 					System.arraycopy(buf, 0, packet, 0, buf.length);
 					System.arraycopy(mac, 0, packet, buf.length, mac.length);
 					multicast(packet);
+					TimeUnit.MILLISECONDS.sleep(1);
 					i += length;
 				} else {
 					buf = Arrays.copyOfRange(data, i, i + size - i);
