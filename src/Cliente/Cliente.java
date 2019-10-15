@@ -83,7 +83,7 @@ public class Cliente {
 	}
 
 	private void save(byte[] fileData) {
-		try (FileOutputStream fos = new FileOutputStream(new File("/Users/Camilo/Desktop/Lab/video.jpg"));) {
+		try (FileOutputStream fos = new FileOutputStream(new File("/Users/Camilo/Desktop/Lab/video.wmv"));) {
 
 			fos.write(fileData);
 			LOGGER.info("Imagen creada!");
