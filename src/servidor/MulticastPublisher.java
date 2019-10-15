@@ -14,6 +14,7 @@ import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -114,12 +115,13 @@ public class MulticastPublisher {
 			MessageDigest ms = MessageDigest.getInstance("MD5");
 
 			// *------------------ ENVIANDO ARCHIVO -----------------
-
+			
 			int size = data.length;
 			multicast("" + size);
 			int i = 0;
 			byte[] mac;
 			byte[] packet;
+			long inicio = System.currentTimeMillis();
 			LOGGER.info("Comenzando transmición...");
 			while (i < size) {
 				byte[] buf;
@@ -144,12 +146,17 @@ public class MulticastPublisher {
 			}
 			LOGGER.info("Archivo enviado!");
 
+			long total =  (System.currentTimeMillis()-inicio) /1000;
+			LOGGER.info(()->"TIEMPO DE TRANSMICIÓN: " +total);
 			close();
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, "Se puteo todo papa", e);
 
 		} catch (NoSuchAlgorithmException e) {
 			LOGGER.log(Level.SEVERE, "Invalid hash algorithm", e);
+		} catch (InterruptedException e) {
+			LOGGER.log(Level.SEVERE,"",e);
+			Thread.currentThread().interrupt();
 		}
 		
 	}
@@ -189,7 +196,7 @@ public class MulticastPublisher {
 		}
 		
 		
-		publisher.sendFile(new File("/Users/Camilo/Desktop/foto.jpg"));
+		publisher.sendFile(new File("/Users/Camilo/Desktop/hola.wmv"));
 	}
 
 }

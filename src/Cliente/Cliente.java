@@ -58,7 +58,7 @@ public class Cliente {
 					}
 					i += bufSize;
 				} else {
-					mac = Arrays.copyOfRange(packet.getData(), lenght - i, packet.getLength());
+					mac = Arrays.copyOfRange(packet.getData(), packet.getLength()-16, packet.getLength());
 					temp = Arrays.copyOfRange(packet.getData(), 0, lenght - i);
 					ck = ms.digest(temp);
 
