@@ -23,8 +23,8 @@ public class Cliente {
 
 	protected MulticastSocket socket = null;
 	protected DatagramSocket envio = null;
-	protected byte[] buf = new byte[2100];
-	protected int bufSize = 2048;
+	protected byte[] buf = new byte[5816];
+	protected int bufSize = 5800;
 
 	private byte[] receive() {
 		try {
@@ -38,11 +38,13 @@ public class Cliente {
 			byte[] ck;
 			int i = 0;
 			MessageDigest ms = MessageDigest.getInstance("MD5");
+			int numPaquetes = (int) Math.ceil(lenght/bufSize);
+			double llegaron = 0;
 			while (i < lenght) {
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
 
-				if (lenght - i >= bufSize) {
+				if (packet.getLength() > bufSize) {
 					mac = Arrays.copyOfRange(packet.getData(), bufSize, packet.getLength());
 					temp = Arrays.copyOfRange(packet.getData(), 0, bufSize);
 					ck = ms.digest(temp);
@@ -57,22 +59,26 @@ public class Cliente {
 
 					}
 					i += bufSize;
+					llegaron++;
 				} else {
-					mac = Arrays.copyOfRange(packet.getData(), packet.getLength()-16, packet.getLength());
-					temp = Arrays.copyOfRange(packet.getData(), 0, lenght - i);
+					temp = Arrays.copyOfRange(packet.getData(), 0, lenght %bufSize);
+					mac = Arrays.copyOfRange(packet.getData(), lenght%bufSize, packet.getLength());
+
 					ck = ms.digest(temp);
 
 					String ckS = DatatypeConverter.printHexBinary(ck).toUpperCase();
 					String macS = DatatypeConverter.printHexBinary(mac).toUpperCase();
-
+					llegaron++;
 					if (ckS.equals(macS)) {
 						System.arraycopy(temp, 0, imgbyte, i, temp.length);
 					} else {
 						LOGGER.log(Level.WARNING, "Hash incorrecto en el paquete");
 					}
-					i += lenght - i;
+					break;
 				}
 			}
+			double porcentaje = (llegaron / numPaquetes) * 100;
+			System.out.println("Llegaron "+porcentaje+" % de los paquetes");
 			LOGGER.info("Archivo recibido!");
 			return imgbyte;
 		} catch (Exception e) {

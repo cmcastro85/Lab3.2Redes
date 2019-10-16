@@ -25,6 +25,12 @@ public class MulticastPublisher {
 	private static final Logger LOGGER = Logger.getLogger(MulticastPublisher.class.getName());
 
 	private static final String READY = "READY";
+	
+	private static final String PATH1 = "/Users/Camilo/Desktop/hola.wmv";
+	
+	private static final String PATH2 = "/Users/Camilo/Desktop/asdfmovie1-12.mp4";
+	
+	private static final String PATH3 = "/Users/Camilo/Desktop/asdfmovie.mp4";
 
 	/**
 	 * Socket de la conexion
@@ -36,7 +42,6 @@ public class MulticastPublisher {
 	 */
 	private InetAddress group;
 
-	private int length;
 
 	private byte[] buff;
 
@@ -47,8 +52,7 @@ public class MulticastPublisher {
 		try {
 			socket = new DatagramSocket(5555);
 			group = InetAddress.getByName("230.0.0.0");
-			length = 2048;
-			buff = new byte[length];
+			buff = new byte[5800];
 		} catch (SocketException e) {
 			LOGGER.log(Level.SEVERE, "El Socket falló.", e);
 		} catch (UnknownHostException e) {
@@ -114,17 +118,18 @@ public class MulticastPublisher {
 			while (i < size) {
 				byte[] buf;
 
-				if (size - i >= length) {
-					buf = Arrays.copyOfRange(data, i, i + length);
-					mac = ms.digest(buf);
-					packet = new byte[buf.length + mac.length];
-					System.arraycopy(buf, 0, packet, 0, buf.length);
-					System.arraycopy(mac, 0, packet, buf.length, mac.length);
+				if (size - i >= buff.length) {
+					buff = Arrays.copyOfRange(data, i, i + buff.length);
+					mac = ms.digest(buff);
+					packet = new byte[buff.length + mac.length];
+					System.arraycopy(buff, 0, packet, 0, buff.length);
+					System.arraycopy(mac, 0, packet, buff.length, mac.length);
 					multicast(packet);
-					TimeUnit.MILLISECONDS.sleep(2);
-					i += length;
+					TimeUnit.MILLISECONDS.sleep(3);
+					i += buff.length;
 				} else {
-					buf = Arrays.copyOfRange(data, i, i + size - i);
+					
+					buf = Arrays.copyOfRange(data, i, size );
 					mac = ms.digest(buf);
 					packet = new byte[buf.length + mac.length];
 					System.arraycopy(buf, 0, packet, 0, buf.length);
@@ -155,22 +160,30 @@ public class MulticastPublisher {
 	 * 
 	 * @param cl
 	 */
-	private void esperar(int cl) {
-		DatagramPacket dt = new DatagramPacket(buff, length);
+	private void esperar() {
+		try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+			System.out.println("A cuantos clientes se les debe mandar el archivo ?");
+			int cl;
+			cl = Integer.parseInt(in.readLine());
+			LOGGER.info(() -> "Se le mandará el archivo a " + cl + " usuarios.");
 
-		int i = 0;
-		while (i < cl) {
-			LOGGER.info("Esperando...");
-			try {
+			DatagramPacket dt = new DatagramPacket(buff, buff.length);
+
+			int i = 0;
+			while (i < cl) {
+				LOGGER.info("Esperando a los usuarios...");
 				socket.receive(dt);
 				String recibido = new String(dt.getData(), 0, dt.getLength());
 				if (recibido.equals(READY)) {
 					i++;
 				}
-			} catch (IOException e) {
-				LOGGER.log(Level.SEVERE, "Error al recibir el ready", e);
 			}
+		} catch (NumberFormatException e) {
+			LOGGER.log(Level.SEVERE, "Inserte un número", e);
+		} catch (IOException e) {
+			LOGGER.log(Level.SEVERE, "Formato invalido", e);
 		}
+
 	}
 
 	/**
@@ -180,6 +193,8 @@ public class MulticastPublisher {
 	 * @return bytes del archivo
 	 */
 	private byte[] cargarArchivo(String path) {
+		
+		
 		try (FileInputStream fis = new FileInputStream(path)) {
 			LOGGER.info("Cargando Archivo...");
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -201,18 +216,25 @@ public class MulticastPublisher {
 		MulticastPublisher publisher = new MulticastPublisher();
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-		System.out.println("A cuantos clientes se les debe mandar el archivo ?");
-		int i;
+		
+		System.out.println("¿Desea enviar el archivo 1 o el 2? ");
+		String path = PATH3;
 		try {
-			i = Integer.parseInt(in.readLine());
-			in.close();
-			publisher.esperar(i);
-		} catch (NumberFormatException e) {
-			LOGGER.log(Level.SEVERE, "Inserte un número", e);
-		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, "Formato invalido", e);
+			String line = in.readLine();
+			if(line.equals("1")) {
+				 path = PATH1;
+			}
+			else if(line.equals("3")) {
+				path = PATH3;
+			}
+			else path = PATH2;
+		}catch(Exception e) {
+			LOGGER.log(Level.SEVERE,"Error al cargar el path",e);
 		}
-		byte[] file = publisher.cargarArchivo("/Users/Camilo/Desktop/hola.wmv");
+		
+		publisher.esperar();
+
+		byte[] file = publisher.cargarArchivo(path);
 
 		publisher.sendFile(file);
 	}
