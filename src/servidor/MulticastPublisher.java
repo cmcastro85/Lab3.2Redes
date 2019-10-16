@@ -26,11 +26,13 @@ public class MulticastPublisher {
 
 	private static final String READY = "READY";
 	
-	private static final String PATH1 = "/Users/Camilo/Desktop/hola.wmv";
+	private static final String PATH1 = "/Users/Camilo/Desktop/B99.mkv";
 	
 	private static final String PATH2 = "/Users/Camilo/Desktop/asdfmovie1-12.mp4";
 	
 	private static final String PATH3 = "/Users/Camilo/Desktop/asdfmovie.mp4";
+	
+	private static final String PATH4 = "/Users/Camilo/Desktop/hola.wmv";
 
 	/**
 	 * Socket de la conexion
@@ -52,7 +54,7 @@ public class MulticastPublisher {
 		try {
 			socket = new DatagramSocket(5555);
 			group = InetAddress.getByName("230.0.0.0");
-			buff = new byte[5800];
+			buff = new byte[7000];
 		} catch (SocketException e) {
 			LOGGER.log(Level.SEVERE, "El Socket falló.", e);
 		} catch (UnknownHostException e) {
@@ -125,7 +127,7 @@ public class MulticastPublisher {
 					System.arraycopy(buff, 0, packet, 0, buff.length);
 					System.arraycopy(mac, 0, packet, buff.length, mac.length);
 					multicast(packet);
-					TimeUnit.MILLISECONDS.sleep(3);
+					TimeUnit.MICROSECONDS.sleep(2500);
 					i += buff.length;
 				} else {
 					
@@ -140,7 +142,7 @@ public class MulticastPublisher {
 			}
 			LOGGER.info("Archivo enviado!");
 
-			long total = (System.currentTimeMillis() - inicio) / 1000;
+			double total = (System.currentTimeMillis() - inicio ) / 1000f;
 			LOGGER.info(() -> "TIEMPO DE TRANSMICIÓN: " + total + " SEGUNDOS");
 			close();
 		} catch (IOException e) {
@@ -218,23 +220,27 @@ public class MulticastPublisher {
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 		
 		System.out.println("¿Desea enviar el archivo 1 o el 2? ");
-		String path = PATH3;
+		String path = PATH4;
 		try {
 			String line = in.readLine();
 			if(line.equals("1")) {
 				 path = PATH1;
 			}
+			else if(line.equals("2")) {
+				path = PATH2;
+			}
 			else if(line.equals("3")) {
 				path = PATH3;
 			}
-			else path = PATH2;
+			else path = PATH4;
 		}catch(Exception e) {
 			LOGGER.log(Level.SEVERE,"Error al cargar el path",e);
 		}
 		
+		byte[] file = publisher.cargarArchivo(path);
 		publisher.esperar();
 
-		byte[] file = publisher.cargarArchivo(path);
+		
 
 		publisher.sendFile(file);
 	}

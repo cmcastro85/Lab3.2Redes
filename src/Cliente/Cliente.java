@@ -23,14 +23,15 @@ public class Cliente {
 
 	protected MulticastSocket socket = null;
 	protected DatagramSocket envio = null;
-	protected byte[] buf = new byte[5816];
-	protected int bufSize = 5800;
+	protected byte[] buf = new byte[7016];
+	protected int bufSize = 7000;
 
 	private byte[] receive() {
 		try {
-			LOGGER.info("Recibiendo arhivo...");
+			LOGGER.info("Esperando a recibir...");
 			DatagramPacket dl = new DatagramPacket(buf, buf.length);
 			socket.receive(dl);
+			LOGGER.info("Recibiendo arhivo...");
 			int lenght = Integer.parseInt(new String(dl.getData(), 0, dl.getLength()));
 			byte[] imgbyte = new byte[lenght];
 			byte[] mac;
@@ -38,7 +39,7 @@ public class Cliente {
 			byte[] ck;
 			int i = 0;
 			MessageDigest ms = MessageDigest.getInstance("MD5");
-			int numPaquetes = (int) Math.ceil(lenght/bufSize);
+			int numPaquetes =  (lenght/bufSize);
 			double llegaron = 0;
 			while (i < lenght) {
 				DatagramPacket packet = new DatagramPacket(buf, buf.length);
