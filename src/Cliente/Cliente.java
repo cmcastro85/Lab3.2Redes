@@ -3,6 +3,7 @@ package cliente;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -10,14 +11,16 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import javax.xml.bind.DatatypeConverter;
 
 public class Cliente {
 
-	private static final Logger LOGGER = Logger.getLogger(Cliente.class.getName());
+	private static final Logger logger = Logger.getLogger(Cliente.class.getName());
 
 	private static final String READY = "READY";
 
@@ -25,13 +28,28 @@ public class Cliente {
 	protected DatagramSocket envio = null;
 	protected byte[] buf = new byte[7016];
 	protected int bufSize = 7000;
+	protected FileHandler fh;
+	
+	public Cliente() {
+		try {
+			fh = new FileHandler("C:/temp/test/MyLogFile.log");
+			logger.addHandler(fh);
+	        SimpleFormatter formatter = new SimpleFormatter();  
+	        fh.setFormatter(formatter); 
+		} catch (SecurityException e) {
+			logger.log(Level.SEVERE,"",e);
+		} catch (IOException e) {
+			logger.log(Level.SEVERE,"",e);
+		}  
+         
+	}
 
 	private byte[] receive() {
 		try {
-			LOGGER.info("Esperando a recibir...");
+			logger.info("Esperando a recibir...");
 			DatagramPacket dl = new DatagramPacket(buf, buf.length);
 			socket.receive(dl);
-			LOGGER.info("Recibiendo arhivo...");
+			logger.info("Recibiendo arhivo...");
 			int lenght = Integer.parseInt(new String(dl.getData(), 0, dl.getLength()));
 			byte[] imgbyte = new byte[lenght];
 			byte[] mac;
@@ -56,7 +74,7 @@ public class Cliente {
 					if (ckS.equals(macS)) {
 						System.arraycopy(temp, 0, imgbyte, i, temp.length);
 					} else {
-						LOGGER.log(Level.WARNING, "Hash incorrecto en el paquete");
+						logger.log(Level.WARNING, "Hash incorrecto en el paquete");
 
 					}
 					i += bufSize;
@@ -73,18 +91,18 @@ public class Cliente {
 					if (ckS.equals(macS)) {
 						System.arraycopy(temp, 0, imgbyte, i, temp.length);
 					} else {
-						LOGGER.log(Level.WARNING, "Hash incorrecto en el paquete");
+						logger.log(Level.WARNING, "Hash incorrecto en el paquete");
 					}
 					break;
 				}
 			}
 			double porcentaje = (llegaron / numPaquetes) * 100;
 			System.out.println("Llegaron "+porcentaje+" % de los paquetes");
-			LOGGER.info("Archivo recibido!");
+			logger.info("Archivo recibido!");
 			return imgbyte;
 		} catch (Exception e) {
 
-			LOGGER.log(Level.SEVERE, "", e);
+			logger.log(Level.SEVERE, "", e);
 			return new byte[256];
 		}
 	}
@@ -93,9 +111,9 @@ public class Cliente {
 		try (FileOutputStream fos = new FileOutputStream(new File("/Users/Camilo/Desktop/Lab/video.wmv"));) {
 
 			fos.write(fileData);
-			LOGGER.info("Imagen creada!");
+			logger.info("Imagen creada!");
 		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, "No se pudo crear la imagen", e);
+			logger.log(Level.SEVERE, "No se pudo crear la imagen", e);
 		}
 	}
 
@@ -103,13 +121,13 @@ public class Cliente {
 		try {
 			// * ---------------------- UNION -------------------
 
-			LOGGER.info("Uniendose al grupo...");
+			logger.info("Uniendose al grupo...");
 			socket = new MulticastSocket(4446);
 			envio = new DatagramSocket();
 			InetAddress group = InetAddress.getByName("230.0.0.0");
 			InetAddress server = InetAddress.getByName("localhost");
 			socket.joinGroup(group);
-			LOGGER.info("Union exitosa!");
+			logger.info("Union exitosa!");
 
 			BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 			System.out.println("Oprima 1 cuando este listo.");
@@ -132,7 +150,7 @@ public class Cliente {
 			socket.leaveGroup(group);
 			socket.close();
 		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, "Error al recibir el archivo.", e);
+			logger.log(Level.SEVERE, "Error al recibir el archivo.", e);
 		}
 	}
 

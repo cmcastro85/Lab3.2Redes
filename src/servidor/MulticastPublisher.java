@@ -14,15 +14,17 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class MulticastPublisher {
 
 	/**
 	 * Logger que mantiene el log de las transacciones.
 	 */
-	private static final Logger LOGGER = Logger.getLogger(MulticastPublisher.class.getName());
+	private static  Logger logger = Logger.getLogger(MulticastPublisher.class.getName());
 
 	private static final String READY = "READY";
 	
@@ -38,6 +40,8 @@ public class MulticastPublisher {
 	 * Socket de la conexion
 	 */
 	private DatagramSocket socket;
+	
+	private FileHandler fh;
 
 	/**
 	 * Ip del grupo
@@ -55,10 +59,18 @@ public class MulticastPublisher {
 			socket = new DatagramSocket(5555);
 			group = InetAddress.getByName("230.0.0.0");
 			buff = new byte[7000];
+			fh = new FileHandler("C:/temp/test/MyLogFile.log");  
+	        logger.addHandler(fh);
+	        SimpleFormatter formatter = new SimpleFormatter();  
+	        fh.setFormatter(formatter);  
 		} catch (SocketException e) {
-			LOGGER.log(Level.SEVERE, "El Socket falló.", e);
+			logger.log(Level.SEVERE, "El Socket falló.", e);
 		} catch (UnknownHostException e) {
-			LOGGER.log(Level.SEVERE, "Group coul not be created.", e);
+			logger.log(Level.SEVERE, "Group coul not be created.", e);
+		} catch (SecurityException e) {
+			logger.log(Level.SEVERE,"",e);
+		} catch (IOException e) {
+			logger.log(Level.SEVERE,"",e);
 		}
 
 	}
@@ -93,7 +105,7 @@ public class MulticastPublisher {
 	 * Metodo para cerrar la conexión.
 	 */
 	private void close() {
-		LOGGER.info("Acabando sesion.");
+		logger.info("Acabando sesion.");
 		socket.close();
 	}
 
@@ -105,7 +117,7 @@ public class MulticastPublisher {
 	private void sendFile(byte[] data) {
 
 		try {
-			LOGGER.info("Creando hash...");
+			logger.info("Creando hash...");
 			MessageDigest ms = MessageDigest.getInstance("MD5");
 
 			// *------------------ ENVIANDO ARCHIVO -----------------
@@ -116,7 +128,7 @@ public class MulticastPublisher {
 			byte[] mac;
 			byte[] packet;
 			long inicio = System.currentTimeMillis();
-			LOGGER.info("Comenzando transmición...");
+			logger.info("Comenzando transmición...");
 			while (i < size) {
 				byte[] buf;
 
@@ -140,18 +152,18 @@ public class MulticastPublisher {
 					i += size - i;
 				}
 			}
-			LOGGER.info("Archivo enviado!");
+			logger.info("Archivo enviado!");
 
 			double total = (System.currentTimeMillis() - inicio ) / 1000f;
-			LOGGER.info(() -> "TIEMPO DE TRANSMICIÓN: " + total + " SEGUNDOS");
+			logger.info(() -> "TIEMPO DE TRANSMICIÓN: " + total + " SEGUNDOS");
 			close();
 		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, "Error al mandar el archivo", e);
+			logger.log(Level.SEVERE, "Error al mandar el archivo", e);
 
 		} catch (NoSuchAlgorithmException e) {
-			LOGGER.log(Level.SEVERE, "Invalid hash algorithm", e);
+			logger.log(Level.SEVERE, "Invalid hash algorithm", e);
 		} catch (InterruptedException e) {
-			LOGGER.log(Level.SEVERE, "", e);
+			logger.log(Level.SEVERE, "", e);
 			Thread.currentThread().interrupt();
 		}
 
@@ -167,13 +179,13 @@ public class MulticastPublisher {
 			System.out.println("A cuantos clientes se les debe mandar el archivo ?");
 			int cl;
 			cl = Integer.parseInt(in.readLine());
-			LOGGER.info(() -> "Se le mandará el archivo a " + cl + " usuarios.");
+			logger.info(() -> "Se le mandará el archivo a " + cl + " usuarios.");
 
 			DatagramPacket dt = new DatagramPacket(buff, buff.length);
 
 			int i = 0;
 			while (i < cl) {
-				LOGGER.info("Esperando a los usuarios...");
+				logger.info("Esperando a los usuarios...");
 				socket.receive(dt);
 				String recibido = new String(dt.getData(), 0, dt.getLength());
 				if (recibido.equals(READY)) {
@@ -181,9 +193,9 @@ public class MulticastPublisher {
 				}
 			}
 		} catch (NumberFormatException e) {
-			LOGGER.log(Level.SEVERE, "Inserte un número", e);
+			logger.log(Level.SEVERE, "Inserte un número", e);
 		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, "Formato invalido", e);
+			logger.log(Level.SEVERE, "Formato invalido", e);
 		}
 
 	}
@@ -198,7 +210,7 @@ public class MulticastPublisher {
 		
 		
 		try (FileInputStream fis = new FileInputStream(path)) {
-			LOGGER.info("Cargando Archivo...");
+			logger.info("Cargando Archivo...");
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
 
 			byte[] temp = new byte[4096];
@@ -209,7 +221,7 @@ public class MulticastPublisher {
 
 			return output.toByteArray();
 		} catch (Exception e) {
-			LOGGER.log(Level.SEVERE, "No se pudo cargar el archivo.", e);
+			logger.log(Level.SEVERE, "No se pudo cargar el archivo.", e);
 			return new byte[1];
 		}
 	}
@@ -234,7 +246,7 @@ public class MulticastPublisher {
 			}
 			else path = PATH4;
 		}catch(Exception e) {
-			LOGGER.log(Level.SEVERE,"Error al cargar el path",e);
+			logger.log(Level.SEVERE,"Error al cargar el path",e);
 		}
 		
 		byte[] file = publisher.cargarArchivo(path);
