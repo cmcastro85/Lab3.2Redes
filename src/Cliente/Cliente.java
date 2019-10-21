@@ -97,7 +97,7 @@ public class Cliente {
 				}
 			}
 			double porcentaje = (llegaron / numPaquetes) * 100;
-			System.out.println("Llegaron "+porcentaje+" % de los paquetes");
+			logger.info(()-> "Llegaron el" + porcentaje+ "% de los paquetes.");
 			logger.info("Archivo recibido!");
 			return imgbyte;
 		} catch (Exception e) {
