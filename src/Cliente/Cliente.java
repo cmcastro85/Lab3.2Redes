@@ -32,7 +32,7 @@ public class Cliente {
 	
 	public Cliente() {
 		try {
-			fh = new FileHandler("C:/temp/test/MyLogFile.log");
+			fh = new FileHandler("/Users/Camilo/Desktop/Lab/Log.log");
 			logger.addHandler(fh);
 	        SimpleFormatter formatter = new SimpleFormatter();  
 	        fh.setFormatter(formatter); 

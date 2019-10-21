@@ -59,7 +59,7 @@ public class MulticastPublisher {
 			socket = new DatagramSocket(5555);
 			group = InetAddress.getByName("230.0.0.0");
 			buff = new byte[7000];
-			fh = new FileHandler("C:/temp/test/MyLogFile.log");  
+			fh = new FileHandler("/Users/Camilo/Desktop/Log.log");  
 	        logger.addHandler(fh);
 	        SimpleFormatter formatter = new SimpleFormatter();  
 	        fh.setFormatter(formatter);  
